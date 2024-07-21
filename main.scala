@@ -1,3 +1,4 @@
 @main
 def main(): Unit =
-  println("Hello World!")
+  val sudoku = SudokuGrid()
+  println(sudoku)
