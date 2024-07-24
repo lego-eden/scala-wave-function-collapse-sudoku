@@ -100,17 +100,10 @@ case class SudokuGrid private (private val grid: Vector[Vector[SudokuGrid.Cell]]
   infix def where(locIsValue: ((Int, Int), Int)): SudokuGrid =
     val ((row, col), value) = locIsValue
     require(defaultCellValues(value))
-
-    val boxVertical = ((row / 3) * 3) until ((row / 3) * 3) + 3
-    val boxHorizontal = ((col / 3) * 3) until ((col / 3) * 3) + 3
-
+    
     var newGrid = updated(row, col)(grid(row)(col).into(value))
-    val cellsToModify = 
-      newGrid.cellsWithIndexes.filter((cell, rowIndex, colIndex) => 
-        rowIndex == row || colIndex == col || (boxHorizontal.contains(col) && boxVertical.contains(row))
-      )
 
-    cellsToModify.foreach((cell, rowIndex, colIndex) =>
+    affectedCells(row, col).foreach((cell, rowIndex, colIndex) =>
       newGrid = newGrid.updated(rowIndex, colIndex)(cell without value)
     )
 
