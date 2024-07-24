@@ -70,48 +70,30 @@ case class SudokuGrid private (private val grid: Vector[Vector[SudokuGrid.Cell]]
     if !solutionFound && visualize.b then
       printAffectedCells(row, col)
       Thread.sleep(50)
-  
-    if solutionFound then None
-    else if row >= 9 && isValid then Some(this)
-    else if row >= 9 || !isValid then None
-    else
-      val newCol = (col + 1) % 9
-      val newRow = row + ((col + 1) / 9)
 
-      var isSolved = false
-      grid(row)(col).possibleValues
-        .map(value =>
-          where((row, col) -> value).solveAt(newRow, newCol)(isSolved) match
-            case solution@Some(_) =>
-              isSolved = true
-              solution
-            case None => None
-        )
-        .collectFirst:
-          case Some(sudoku) => sudoku
-  
-  def isRowValid(row: Int): Boolean = grid(row).forall(_.isValid)
-  def isColValid(col: Int): Boolean = grid.forall(_(col).isValid)
-  def isBoxValid(cellRow: Int, cellCol: Int): Boolean =
-    val rowStart = (cellRow / 3) * 3
-    val colStart = (cellCol / 3) * 3
-    var valid = true
-    
-    for 
-      row <- rowStart until rowStart + 3
-      col <- colStart until colStart + 3 
-    do
-      valid = valid && grid(row)(col).isValid
-    
-    valid
-  
+    lowestEntropy match
+      case _ if solutionFound || !isValid => None
+      case None => Some(this)
+      case Some((minRow, minCol)) =>
+        var isSolved = false
+        grid(row)(col).possibleValues
+          .map(value =>
+            where((row, col) -> value).solveAt(minRow, minCol)(isSolved) match
+              case solution@Some(_) =>
+                isSolved = true
+                solution
+              case None => None
+          )
+          .collectFirst:
+            case Some(sudoku) => sudoku
+
   lazy val isValid: Boolean =
-    grid.indices.forall(i => isRowValid(i) && isColValid(i)) &&
-    (0 until 3).forall(row =>
-      (0 until 3).forall(col =>
-        isBoxValid(row * 3, col * 3)
-      )  
-    )
+    cellsWithIndexes.forall((cell, _, _) => cell.isValid)
+
+  lazy val lowestEntropy: Option[(Int, Int)] =
+    cellsWithIndexes.collect{case cell@(Cell.Unknown(_), _, _) => cell}
+    .minByOption((cell, _, _) => cell.possibleValues.size)
+    .map((_, row, col) => (row, col))
 
   private lazy val cellsWithIndexes: Vector[(Cell, Int, Int)] =
     val seq = for
@@ -200,4 +182,3 @@ object SudokuGrid:
   private object Cell:
     val defaultValues = Set(1 to 9 *)
     val default: Cell = Unknown(defaultValues)
-    
