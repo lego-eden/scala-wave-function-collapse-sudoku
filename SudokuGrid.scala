@@ -45,17 +45,17 @@ case class SudokuGrid private (private val grid: Vector[Vector[SudokuGrid.Cell]]
 
   private def boxAt(row: Int, col: Int): Vector[(Cell, Int, Int)] =
     val boxRowStart = (row / 3) * 3
-    val boxColStart = (row / 3) * 3
+    val boxColStart = (col / 3) * 3
     
     val boxRowRange = boxRowStart until (boxRowStart + 3)
     val boxColRange = boxColStart until (boxColStart + 3)
     
-    val boxIndexes = 
+    val boxIndexSet = 
       boxRowRange.flatMap(row => Vector(row, row, row))
       .zip(boxColRange :++ boxColRange :++ boxColRange).toSet
     
     cellsWithIndexes.filter((cell, rowIndex, colIndex) =>
-      boxIndexes(rowIndex, colIndex)
+      boxIndexSet(rowIndex, colIndex)
     )
   
   private def affectedCells(row: Int, col: Int): Vector[(Cell, Int, Int)] =
