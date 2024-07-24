@@ -2,10 +2,8 @@ import scala.collection.immutable.Set
 import scala.annotation.targetName
 import scala.compiletime.ops.double
 
-case class SudokuGrid private (private val grid: Vector[Vector[SudokuGrid.Cell]]):
-  import SudokuGrid.Cell
-  import SudokuGrid.defaultCellValues
-  require(grid.forall(_.size == 9) && grid.size == 9)
+case class SudokuGrid private (private val grid: Vector[Vector[SudokuGrid.Cell]])(using Visualize):
+  import SudokuGrid.{Cell, defaultCellValues}
 
   override def toString(): String =
     "SudokuGrid:\n" +
@@ -64,7 +62,33 @@ case class SudokuGrid private (private val grid: Vector[Vector[SudokuGrid.Cell]]
     ) :++ boxAt(row, col)
     nonUniqueAffectedCells.distinct
 
-  lazy val solved: Option[SudokuGrid] = None
+  lazy val solved: Option[SudokuGrid] =
+    if isValid then solveAt(0, 0)(false)
+    else None
+  
+  private def solveAt(row: Int, col: Int)(solutionFound: Boolean)(using visualize: Visualize): Option[SudokuGrid] =
+    if !solutionFound && visualize.b then
+      printAffectedCells(row, col)
+      Thread.sleep(50)
+  
+    if solutionFound then None
+    else if row >= 9 && isValid then Some(this)
+    else if row >= 9 || !isValid then None
+    else
+      val newCol = (col + 1) % 9
+      val newRow = row + ((col + 1) / 9)
+
+      var isSolved = false
+      grid(row)(col).possibleValues
+        .map(value =>
+          where((row, col) -> value).solveAt(newRow, newCol)(isSolved) match
+            case solution@Some(_) =>
+              isSolved = true
+              solution
+            case None => None
+        )
+        .collectFirst:
+          case Some(sudoku) => sudoku
   
   def isRowValid(row: Int): Boolean = grid(row).forall(_.isValid)
   def isColValid(col: Int): Boolean = grid.forall(_(col).isValid)
@@ -103,7 +127,7 @@ case class SudokuGrid private (private val grid: Vector[Vector[SudokuGrid.Cell]]
     
     var newGrid = updated(row, col)(grid(row)(col).into(value))
 
-    affectedCells(row, col).foreach((cell, rowIndex, colIndex) =>
+    newGrid.affectedCells(row, col).foreach((cell, rowIndex, colIndex) =>
       newGrid = newGrid.updated(rowIndex, colIndex)(cell without value)
     )
 
@@ -123,17 +147,19 @@ case class SudokuGrid private (private val grid: Vector[Vector[SudokuGrid.Cell]]
 object SudokuGrid:
   val defaultCellValues = Cell.defaultValues
 
-  def apply(): SudokuGrid =
+  def apply()(using Visualize): SudokuGrid =
     new SudokuGrid(Vector.fill(9)(Vector.fill(9)(Cell.default)))
   
   @targetName("gridapply")
-  def apply(grid: Vector[Vector[Int]]): SudokuGrid =
+  def apply(grid: Vector[Vector[Int]])(using Visualize): SudokuGrid =
+    require(grid.forall(_.size == 9) && grid.size == 9)
     var newGrid = SudokuGrid()
     for
       row <- 0 until 9
       col <- 0 until 9
     do
-      newGrid = newGrid where (row, col) -> grid(row)(col)
+      if grid(row)(col) != 0 then
+        newGrid = newGrid where (row, col) -> grid(row)(col)
 
     newGrid
 
