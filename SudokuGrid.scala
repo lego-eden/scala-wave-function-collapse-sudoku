@@ -63,26 +63,27 @@ case class SudokuGrid private (private val grid: Vector[Vector[SudokuGrid.Cell]]
     nonUniqueAffectedCells.distinct
 
   lazy val solved: Option[SudokuGrid] =
-    if isValid then solveAt(0, 0)(false)
+    if isValid then solveAt(0, 0)
     else None
   
-  private def solveAt(row: Int, col: Int)(solutionFound: Boolean)(using visualize: Visualize): Option[SudokuGrid] =
-    if !solutionFound && visualize.b then
-      printAffectedCells(row, col)
-      Thread.sleep(50)
-
+  private def solveAt(row: Int, col: Int)(using visualize: Visualize): Option[SudokuGrid] =
     lowestEntropy match
-      case _ if solutionFound || !isValid => None
+      case _ if !isValid => None
       case None => Some(this)
       case Some((minRow, minCol)) =>
         var isSolved = false
         grid(row)(col).possibleValues
           .map(value =>
-            where((row, col) -> value).solveAt(minRow, minCol)(isSolved) match
-              case solution@Some(_) =>
-                isSolved = true
-                solution
-              case None => None
+            if isSolved then None
+            else
+              val updatedGrid = where((row, col) -> value)
+              visualize(updatedGrid.toString())
+
+              updatedGrid.solveAt(minRow, minCol) match
+                case solution@Some(_) =>
+                  isSolved = true
+                  solution
+                case None => None
           )
           .collectFirst:
             case Some(sudoku) => sudoku

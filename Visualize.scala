@@ -1,3 +1,3 @@
-case class Visualize(b: Boolean)
+trait Visualize extends (String => Unit)
 object Visualize:
-  given Visualize(false)
+  given Visualize = _ => ()
