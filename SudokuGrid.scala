@@ -2,7 +2,7 @@ import scala.collection.immutable.Set
 import scala.annotation.targetName
 import scala.compiletime.ops.double
 
-case class SudokuGrid private (private val grid: Vector[Vector[SudokuGrid.Cell]])(using Visualize[SudokuGrid]):
+case class SudokuGrid private (private val grid: Vector[Vector[SudokuGrid.Cell]])(using visualize: Visualize[SudokuGrid]):
   import SudokuGrid.{Cell, defaultCellValues}
 
   override def toString(): String =
@@ -66,7 +66,7 @@ case class SudokuGrid private (private val grid: Vector[Vector[SudokuGrid.Cell]]
     if isValid then solveAt(0, 0)
     else None
   
-  private def solveAt(row: Int, col: Int)(using visualize: Visualize[SudokuGrid]): Option[SudokuGrid] =
+  private def solveAt(row: Int, col: Int): Option[SudokuGrid] =
     lowestEntropy match
       case _ if !isValid => None
       case None => Some(this)
@@ -151,36 +151,37 @@ object SudokuGrid:
   private enum Cell:
     case Known(value: Int)
     case Unknown(values: Set[Int])
-    case Invalid
+    case Invalid(value: Option[Int])
 
     lazy val isValid: Boolean = this match
-      case Invalid => false
+      case Invalid(value) => false
       case _ => true
 
     infix def into(value: Int): Cell = this match
       case Known(value) => this 
       case Unknown(values) => 
         if values(value) then Known(value) 
-        else Invalid
-      case Invalid => Invalid
+        else Invalid(Some(value))
+      case Invalid(value) => this
 
     infix def without(value: Int): Cell = this match
-      case Known(v) => this
-      case Unknown(vs) =>
-        val newValues = vs - value
-        if newValues.isEmpty then Invalid
+      case Known(value) => this
+      case Unknown(values) =>
+        val newValues = values - value
+        if newValues.isEmpty then Invalid(None)
         else Unknown(newValues)
-      case Invalid => Invalid
+      case Invalid(value) => this
     
     lazy val possibleValues: Set[Int] = this match
       case Known(value) => Set(value)
       case Unknown(values) => values
-      case Invalid => Set()
+      case Invalid(value) => Set()
     
     override def toString(): String = this match
       case Known(value) => s"${Console.GREEN}$value${Console.RESET}"
       case Unknown(values) => "-"
-      case Invalid => s"${Console.RED}X${Console.RESET}"
+      case Invalid(Some(i)) => s"${Console.RED}$i${Console.RESET}"
+      case Invalid(None) => s"${Console.RED}X${Console.RESET}"
 
   private object Cell:
     val defaultValues = Set(1 to 9 *)
