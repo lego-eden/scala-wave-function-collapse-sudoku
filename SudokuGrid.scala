@@ -1,8 +1,9 @@
 import scala.collection.immutable.Set
 import scala.annotation.targetName
 import scala.compiletime.ops.double
+import DoodleVisualizer.visualize
 
-case class SudokuGrid private (private val grid: Vector[Vector[SudokuGrid.Cell]])(using visualize: Visualize[SudokuGrid]):
+case class SudokuGrid private (private val grid: Vector[Vector[SudokuGrid.Cell]]):
   import SudokuGrid.{Cell, defaultCellValues}
 
   override def toString(): String =
@@ -62,11 +63,11 @@ case class SudokuGrid private (private val grid: Vector[Vector[SudokuGrid.Cell]]
     ) :++ boxAt(row, col)
     nonUniqueAffectedCells.distinct
 
-  lazy val solved: Option[SudokuGrid] =
+  def solved(using Visualize[SudokuGrid]): Option[SudokuGrid] =
     if isValid then solveAt(0, 0)
     else None
   
-  private def solveAt(row: Int, col: Int): Option[SudokuGrid] =
+  private def solveAt(row: Int, col: Int)(using visualize: Visualize[SudokuGrid]): Option[SudokuGrid] =
     lowestEntropy match
       case _ if !isValid => None
       case None => Some(this)
@@ -132,11 +133,11 @@ object SudokuGrid:
 
   given Visualize[SudokuGrid] = s => ()
 
-  def apply()(using Visualize[SudokuGrid]): SudokuGrid =
+  def apply(): SudokuGrid =
     new SudokuGrid(Vector.fill(9)(Vector.fill(9)(Cell.default)))
   
   @targetName("gridapply")
-  def apply(grid: Vector[Vector[Int]])(using Visualize[SudokuGrid]): SudokuGrid =
+  def apply(grid: Vector[Vector[Int]]): SudokuGrid =
     require(grid.forall(_.size == 9) && grid.size == 9)
     var newGrid = SudokuGrid()
     for
