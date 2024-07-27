@@ -2,7 +2,7 @@ import scala.collection.immutable.Set
 import scala.annotation.targetName
 import scala.compiletime.ops.double
 
-case class SudokuGrid private (private val grid: Vector[Vector[SudokuGrid.Cell]])(using Visualize):
+case class SudokuGrid private (private val grid: Vector[Vector[SudokuGrid.Cell]])(using Visualize[SudokuGrid]):
   import SudokuGrid.{Cell, defaultCellValues}
 
   override def toString(): String =
@@ -66,7 +66,7 @@ case class SudokuGrid private (private val grid: Vector[Vector[SudokuGrid.Cell]]
     if isValid then solveAt(0, 0)
     else None
   
-  private def solveAt(row: Int, col: Int)(using visualize: Visualize): Option[SudokuGrid] =
+  private def solveAt(row: Int, col: Int)(using visualize: Visualize[SudokuGrid]): Option[SudokuGrid] =
     lowestEntropy match
       case _ if !isValid => None
       case None => Some(this)
@@ -77,7 +77,7 @@ case class SudokuGrid private (private val grid: Vector[Vector[SudokuGrid.Cell]]
             if isSolved then None
             else
               val updatedGrid = where((row, col) -> value)
-              visualize(updatedGrid.toString())
+              visualize(updatedGrid)
 
               updatedGrid.solveAt(minRow, minCol) match
                 case solution@Some(_) =>
@@ -130,11 +130,13 @@ case class SudokuGrid private (private val grid: Vector[Vector[SudokuGrid.Cell]]
 object SudokuGrid:
   val defaultCellValues = Cell.defaultValues
 
-  def apply()(using Visualize): SudokuGrid =
+  given Visualize[SudokuGrid] = s => ()
+
+  def apply()(using Visualize[SudokuGrid]): SudokuGrid =
     new SudokuGrid(Vector.fill(9)(Vector.fill(9)(Cell.default)))
   
   @targetName("gridapply")
-  def apply(grid: Vector[Vector[Int]])(using Visualize): SudokuGrid =
+  def apply(grid: Vector[Vector[Int]])(using Visualize[SudokuGrid]): SudokuGrid =
     require(grid.forall(_.size == 9) && grid.size == 9)
     var newGrid = SudokuGrid()
     for

@@ -1,3 +1,1 @@
-trait Visualize extends (String => Unit)
-object Visualize:
-  given Visualize = _ => ()
+type Visualize[A] = (A => Unit)
