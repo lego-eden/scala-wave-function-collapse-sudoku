@@ -124,6 +124,13 @@ case class SudokuGrid private (private val grid: Vector[Vector[SudokuGrid.Cell]]
     )
     newGrid
 
+  infix def remove(loc: (Int, Int)): SudokuGrid =
+    val (row, col) = loc
+    val newGrid = updated(row, col)(Cell.default)
+    val locsAndValues = newGrid.cellsWithIndexes
+      .collect{case (Cell.Known(value), r, c) => (r, c) -> value}
+    SudokuGrid.empty.where(locsAndValues*)
+
   private def updated(row: Int, col: Int)(value: Cell): SudokuGrid =
     SudokuGrid(grid.updated(row, grid(row).updated(col, value)))
     
@@ -133,13 +140,13 @@ object SudokuGrid:
 
   given Visualize[SudokuGrid] = s => ()
 
-  def apply(): SudokuGrid =
+  val empty: SudokuGrid =
     new SudokuGrid(Vector.fill(9)(Vector.fill(9)(Cell.default)))
   
   @targetName("gridapply")
   def apply(grid: Vector[Vector[Int]]): SudokuGrid =
     require(grid.forall(_.size == 9) && grid.size == 9)
-    var newGrid = SudokuGrid()
+    var newGrid = SudokuGrid.empty
     for
       row <- 0 until 9
       col <- 0 until 9
