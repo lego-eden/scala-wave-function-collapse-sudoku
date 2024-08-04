@@ -3,9 +3,9 @@
 class SudokuTests extends munit.FunSuite:
 
   test("EmptySolve"):
-    assert(SudokuGrid().solved.nonEmpty)
+    assert(SudokuGrid.empty.solved.nonEmpty)
   
   test("ImpossibleSolve"):
-    val unsolvableSudoku = SudokuGrid() where ((0, 0) -> 1)
-    assert(SudokuGrid().solved.isEmpty)
+    val unsolvableSudoku = SudokuGrid.empty where ((0, 0) -> 1)
+    assert(SudokuGrid.empty.solved.isEmpty)
 end SudokuTests

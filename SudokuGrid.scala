@@ -31,7 +31,7 @@ case class SudokuGrid private (private val grid: Vector[Vector[SudokuGrid.Cell]]
               s"$colVal "
             else colVal.toString()
           if affectedCells(colVal, i, j) then
-            s"${Console.BLACK_B}$res${Console.RESET}"
+            s"${Console.REVERSED}$res${Console.RESET}"
           else
             res
         ).mkString(" ")
@@ -63,24 +63,20 @@ case class SudokuGrid private (private val grid: Vector[Vector[SudokuGrid.Cell]]
     ) :++ boxAt(row, col)
     nonUniqueAffectedCells.distinct
 
-  def solved(using Visualize[SudokuGrid]): Option[SudokuGrid] =
-    if isValid then solveAt(0, 0)
-    else None
-  
-  private def solveAt(row: Int, col: Int)(using visualize: Visualize[SudokuGrid]): Option[SudokuGrid] =
+  def solved(using visualize: Visualize[SudokuGrid]): Option[SudokuGrid] =
     lowestEntropy match
       case _ if !isValid => None
       case None => Some(this)
       case Some((minRow, minCol)) =>
         var isSolved = false
-        grid(row)(col).possibleValues
+        grid(minRow)(minCol).possibleValues
           .map(value =>
             if isSolved then None
             else
-              val updatedGrid = where((row, col) -> value)
-              visualize(updatedGrid)
+              visualize(this)
+              val updatedGrid = where((minRow, minCol) -> value)
 
-              updatedGrid.solveAt(minRow, minCol) match
+              updatedGrid.solved match
                 case solution@Some(_) =>
                   isSolved = true
                   solution
