@@ -20,6 +20,9 @@ case class SudokuGrid private (private val grid: Vector[Vector[SudokuGrid.Cell]]
       else rowStr.toString()
     ).mkString("\n")
 
+  def printAffectedCells(point: (Int, Int)): Unit =
+    printAffectedCells(point._1, point._2)
+
   def printAffectedCells(row: Int, col: Int): Unit = 
     val affectedCells = this.affectedCells(row, col).toSet
     
@@ -56,12 +59,16 @@ case class SudokuGrid private (private val grid: Vector[Vector[SudokuGrid.Cell]]
     cellsWithIndexes.filter((cell, rowIndex, colIndex) =>
       boxIndexSet(rowIndex, colIndex)
     )
-  
+
   private def affectedCells(row: Int, col: Int): Vector[(Cell, Int, Int)] =
     val nonUniqueAffectedCells = cellsWithIndexes.filter((cell, rowIndex, colIndex) =>
       rowIndex == row || colIndex == col
     ) :++ boxAt(row, col)
     nonUniqueAffectedCells.distinct
+
+  def apply(r: Int, c: Int): String =
+    require((0 until 9).contains(r) && (0 until 9).contains(c))
+    grid(r)(c).toString()
 
   def solved(using visualize: Visualize[SudokuGrid]): Option[SudokuGrid] =
     lowestEntropy match
@@ -75,6 +82,7 @@ case class SudokuGrid private (private val grid: Vector[Vector[SudokuGrid.Cell]]
             else
               visualize(this)
               val updatedGrid = where((minRow, minCol) -> value)
+              // updatedGrid.printAffectedCells(minRow, minCol)
 
               updatedGrid.solved match
                 case solution@Some(_) =>
@@ -103,7 +111,9 @@ case class SudokuGrid private (private val grid: Vector[Vector[SudokuGrid.Cell]]
 
   infix def where(locIsValue: ((Int, Int), Int)): SudokuGrid =
     val ((row, col), value) = locIsValue
-    require(defaultCellValues(value))
+
+    if !defaultCellValues(value) then
+      throw new IllegalArgumentException("Number out of range")
     
     var newGrid = updated(row, col)(grid(row)(col).into(value))
 
@@ -181,11 +191,16 @@ object SudokuGrid:
       case Unknown(values) => values
       case Invalid(value) => Set()
     
+    // override def toString(): String = this match
+    //   case Known(value) => s"${Console.GREEN}$value${Console.RESET}"
+    //   case Unknown(values) => "-"
+    //   case Invalid(Some(i)) => s"${Console.RED}$i${Console.RESET}"
+    //   case Invalid(None) => s"${Console.RED}X${Console.RESET}"
     override def toString(): String = this match
-      case Known(value) => s"${Console.GREEN}$value${Console.RESET}"
+      case Known(value) => value.toString()
       case Unknown(values) => "-"
-      case Invalid(Some(i)) => s"${Console.RED}$i${Console.RESET}"
-      case Invalid(None) => s"${Console.RED}X${Console.RESET}"
+      case Invalid(Some(value)) => value.toString()
+      case Invalid(None) => "X"
 
   private object Cell:
     val defaultValues = Set(1 to 9 *)

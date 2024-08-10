@@ -9,8 +9,4 @@ val impossible = SudokuGrid(impossigrid)
 
 @main
 def main(): Unit =
-  println(s"This is an empty sudoku-grid:\n${SudokuGrid.empty}")
-  println(s"When solved it looks like: \n${SudokuGrid.empty.solved}")
-
-  println(s"This grid is impossible to solve:\n$impossible")
-  println(s"When solved it gives back: '${impossible.solved}'")
+  SudokuGui("SudokuGui", 800, 800)
